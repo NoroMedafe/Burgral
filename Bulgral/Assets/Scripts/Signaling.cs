@@ -8,6 +8,8 @@ public class Signaling : MonoBehaviour
 {
     [SerializeField] private AudioSource _audioSource;
 
+    private bool _isSignaling = false;
+   
     private void Start()
     {
         _audioSource = GetComponent<AudioSource>();
@@ -15,44 +17,49 @@ public class Signaling : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        
         if (collision.TryGetComponent<Bulgral>(out Bulgral bulgral))
         {
-            Debug.Log("¬ошел посторонний");
-
-            StartCoroutine(startSignaling());
+            _isSignaling = true;
+            StopAllCoroutines();
+            StartCoroutine(SetActiveAlarm(_isSignaling));
         }
     }
     
     private void OnTriggerExit2D(Collider2D collision)
     {
+
         if (collision.TryGetComponent<Bulgral>(out Bulgral bulgral))
         {
-            Debug.Log("посторонний ушел");
-
-            StartCoroutine(stopSignaling());
+            _isSignaling = false;
+            StopAllCoroutines();
+            StartCoroutine(SetActiveAlarm(_isSignaling));
         }
     }
 
-    private IEnumerator startSignaling()
+    private IEnumerator SetActiveAlarm(bool isSignaling)
     {
-        _audioSource.Play();
 
-        while (_audioSource.volume != 1)
+        if (isSignaling)
         {
-            _audioSource.volume += 0.05f;
+            _audioSource.Play();
 
-            yield return null;
+            while (_audioSource.volume != 1)
+            {
+                _audioSource.volume += 0.01f;
+
+                yield return null;
+            }
         }
-    }
-    private IEnumerator stopSignaling()
-    {
-        StopCoroutine(startSignaling());
-
-        while (_audioSource.volume != 0)
+        else
         {
-            _audioSource.volume -= 0.05f;
 
-            yield return null;
+            while (_audioSource.volume != 0)
+            {
+                _audioSource.volume -= 0.01f;
+
+                yield return null;
+            }
         }
     }
 }
