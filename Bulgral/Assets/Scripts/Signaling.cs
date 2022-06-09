@@ -7,9 +7,11 @@ using UnityEngine.Events;
 public class Signaling : MonoBehaviour
 {
     [SerializeField] private AudioSource _audioSource;
+    [SerializeField] private float _speed;
 
-    private bool _isSignaling = false;
-   
+    private float _currentSignalingValue;
+    private Coroutine _currentActiveCoroutine;
+
     private void Start()
     {
         _audioSource = GetComponent<AudioSource>();
@@ -20,9 +22,14 @@ public class Signaling : MonoBehaviour
         
         if (collision.TryGetComponent<Bulgral>(out Bulgral bulgral))
         {
-            _isSignaling = true;
-            StopAllCoroutines();
-            StartCoroutine(SetActiveAlarm(_isSignaling));
+            _currentSignalingValue = 1;
+
+            if (_currentActiveCoroutine != null)
+                StopCoroutine(_currentActiveCoroutine);
+
+            _audioSource.Play();
+
+            _currentActiveCoroutine = StartCoroutine(VolumeChange(_currentSignalingValue));
         }
     }
     
@@ -31,35 +38,23 @@ public class Signaling : MonoBehaviour
 
         if (collision.TryGetComponent<Bulgral>(out Bulgral bulgral))
         {
-            _isSignaling = false;
-            StopAllCoroutines();
-            StartCoroutine(SetActiveAlarm(_isSignaling));
+            _currentSignalingValue = 0;
+
+            if (_currentActiveCoroutine != null)
+                StopCoroutine(_currentActiveCoroutine);
+
+            _currentActiveCoroutine = StartCoroutine(VolumeChange(_currentSignalingValue));
         }
     }
 
-    private IEnumerator SetActiveAlarm(bool isSignaling)
+    private IEnumerator VolumeChange(float signalingValue)
     {
 
-        if (isSignaling)
+        while (_audioSource.volume != signalingValue)
         {
-            _audioSource.Play();
+            _audioSource.volume = Mathf.MoveTowards(_audioSource.volume, signalingValue, _speed);
 
-            while (_audioSource.volume != 1)
-            {
-                _audioSource.volume += 0.01f;
-
-                yield return null;
-            }
-        }
-        else
-        {
-
-            while (_audioSource.volume != 0)
-            {
-                _audioSource.volume -= 0.01f;
-
-                yield return null;
-            }
+            yield return null;
         }
     }
 }
